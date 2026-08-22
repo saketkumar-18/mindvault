@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useConversations, useKnowledgeBases } from "../hooks/queries";
 import { api, AppApiError, streamChat } from "../lib/api";
 import { SourceList } from "../components/SourceList";
+import { DocumentViewer, type ViewerTarget } from "../components/DocumentViewer";
 import { Spinner, ConfirmDialog } from "../components/ui";
 import { useToast } from "../components/Toast";
 import { t } from "../lib/i18n";
@@ -18,6 +19,12 @@ interface ChatMessage {
   streaming?: boolean;
 }
 
+interface ViewerState {
+  documentId: string;
+  filename: string;
+  target?: ViewerTarget;
+}
+
 export default function Chat() {
   const { data: conversations } = useConversations();
   const { data: kbs } = useKnowledgeBases();
@@ -27,6 +34,7 @@ export default function Chat() {
   const [streaming, setStreaming] = useState(false);
   const [kbId, setKbId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [viewer, setViewer] = useState<ViewerState | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
@@ -286,7 +294,12 @@ export default function Chat() {
                 {m.sources && m.sources.length > 0 && (
                   <div className="mt-3 border-t border-[var(--color-mv-border)] pt-2">
                     <div className="mb-1 text-xs font-semibold text-[var(--color-mv-muted)]">{t("chat.sources")}</div>
-                    <SourceList sources={m.sources} />
+                    <SourceList
+                      sources={m.sources}
+                      onViewDocument={(docId, page, query) =>
+                        setViewer({ documentId: docId, filename: m.sources?.find((s) => s.document_id === docId)?.filename ?? "Document", target: { page, query } })
+                      }
+                    />
                   </div>
                 )}
                 {m.role === "assistant" && !m.streaming && m.content && (
@@ -358,6 +371,15 @@ export default function Chat() {
         title={t("common.delete")}
         message="Delete this conversation?"
       />
+
+      {viewer && (
+        <DocumentViewer
+          documentId={viewer.documentId}
+          filename={viewer.filename}
+          target={viewer.target}
+          onClose={() => setViewer(null)}
+        />
+      )}
     </div>
   );
 }

@@ -53,3 +53,10 @@ playwright-report/
 *.whl
 build/
 dist-exe/
+
+# --- Tauri / Rust (build artifacts only, never commit) ---
+src-tauri/target/
+src-tauri/gen/
+src-tauri/node_modules/
+src-tauri/android/
+src-tauri/ios/

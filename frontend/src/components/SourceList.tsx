@@ -1,7 +1,15 @@
 import type { SourceCitation } from "../lib/types";
 import { truncate } from "../lib/format";
 
-export function SourceList({ sources, onSelect }: { sources: SourceCitation[]; onSelect?: (s: SourceCitation) => void }) {
+export function SourceList({
+  sources,
+  onSelect,
+  onViewDocument,
+}: {
+  sources: SourceCitation[];
+  onSelect?: (s: SourceCitation) => void;
+  onViewDocument?: (docId: string, page?: number | null, query?: string) => void;
+}) {
   if (!sources.length) {
     return (
       <p className="text-sm text-[var(--color-mv-muted)] italic">
@@ -15,7 +23,10 @@ export function SourceList({ sources, onSelect }: { sources: SourceCitation[]; o
         <li key={`${s.chunk_id}-${i}`}>
           <button
             type="button"
-            onClick={() => onSelect?.(s)}
+            onClick={() => {
+              onSelect?.(s);
+              onViewDocument?.(s.document_id, s.page_start ?? null, s.excerpt?.slice(0, 80) ?? undefined);
+            }}
             className="w-full text-left rounded-lg border border-[var(--color-mv-border)] bg-[var(--color-mv-bg)] p-2 hover:border-[var(--color-mv-primary)] transition-colors"
           >
             <div className="flex items-center justify-between gap-2">

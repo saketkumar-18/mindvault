@@ -57,12 +57,13 @@ test("capture screenshots", async ({ page }) => {
   await expect(page.getByText("Security Notes")).toBeVisible();
   await page.screenshot({ path: `${OUT_DIR}/knowledge-bases.png`, fullPage: true });
 
-  // 5. Chat with a grounded answer
+  // 5. Chat with a grounded answer (real LLM may take a while)
   await page.getByRole("link", { name: "Chat", exact: true }).click();
   await page.getByPlaceholder(/Ask about your documents/i).fill("What is the core assumption of zero trust?");
   await page.getByRole("button", { name: /Send/i }).click();
-  await expect(page.getByText(/Based on the provided documents/i)).toBeVisible({ timeout: 60_000 });
-  await expect(page.getByText(/Sources/i)).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText(/Sources/i)).toBeVisible({ timeout: 180_000 });
+  // Wait for generation to finish (streaming "Generating…" bubble disappears).
+  await expect(page.getByText(/Generating/i).first()).toBeHidden({ timeout: 180_000 });
   await page.waitForTimeout(500);
   await page.screenshot({ path: `${OUT_DIR}/chat.png`, fullPage: true });
 

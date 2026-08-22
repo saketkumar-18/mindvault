@@ -10,15 +10,28 @@ test("main workflow: upload, index, search, chat, citations, delete", async ({ p
   await page.goto("/");
   await expect(page).toHaveTitle(/MindVault/);
 
-  // First-run wizard appears on a fresh install. Walk through all 6 steps.
-  await expect(page.getByRole("heading", { name: /Welcome to MindVault/i })).toBeVisible();
-  for (let step = 0; step < 5; step++) {
-    await page.getByRole("button", { name: /Next/i }).click();
+  // Complete the first-run wizard if it appears (shared backend across specs).
+  const wizardVisible = await page
+    .getByRole("heading", { name: /Welcome to MindVault/i })
+    .waitFor({ state: "visible", timeout: 8000 })
+    .then(() => true)
+    .catch(() => false);
+  if (wizardVisible) {
+    for (let step = 0; step < 6; step++) {
+      const startBtn = page.getByRole("button", { name: /Start using MindVault/i });
+      if (await startBtn.isVisible().catch(() => false)) {
+        await startBtn.click();
+        break;
+      }
+      const nextBtn = page.getByRole("button", { name: /Next/i });
+      if (!(await nextBtn.isVisible().catch(() => false))) break;
+      await nextBtn.click();
+      await page.waitForTimeout(120);
+    }
   }
-  await page.getByRole("button", { name: /Start using MindVault/i }).click();
 
-  // Dashboard loads after completing setup
-  await expect(page.getByRole("heading", { name: /Dashboard/i })).toBeVisible();
+  // Dashboard loads after setup
+  await expect(page.getByRole("heading", { name: /Dashboard/i })).toBeVisible({ timeout: 20_000 });
 
   // Navigate to Documents (sidebar link)
   await page.getByRole("link", { name: "Documents", exact: true }).click();
