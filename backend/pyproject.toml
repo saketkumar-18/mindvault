@@ -1,0 +1,85 @@
+[project]
+name = "mindvault"
+version = "0.3.0"
+description = "MindVault backend: local-first private AI knowledge assistant"
+readme = "../README.md"
+requires-python = ">=3.11"
+license = { text = "AGPL-3.0-only" }
+authors = [{ name = "MindVault Contributors" }]
+dependencies = [
+    "fastapi>=0.115,<1.0",
+    "uvicorn[standard]>=0.30",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.4",
+    "sqlalchemy>=2.0",
+    "alembic>=1.13",
+    "pypdf>=4.2",
+    "python-docx>=1.1",
+    "python-multipart>=0.0.9",
+    "httpx>=0.27",
+    "numpy>=1.26",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.2",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.5",
+    "mypy>=1.10",
+]
+# Heavy local-ML dependencies are optional so the core app and test-suite can
+# run everywhere (including CI without GPU). When installed, MindVault
+# automatically upgrades to real semantic embeddings / FAISS.
+ml = [
+    "sentence-transformers>=3.0",
+    "faiss-cpu>=1.10",
+]
+llamacpp = [
+    "llama-cpp-python>=0.2.80",
+]
+
+[project.scripts]
+mindvault = "mindvault.__main__:main"
+
+[build-system]
+requires = ["setuptools>=70"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["mindvault*"]
+
+[tool.setuptools.package-data]
+mindvault = ["migrations/**/*"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+src = ["mindvault", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "F", "I", "B", "UP",
+]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+# FastAPI idiom: Body/Form/File in argument defaults.
+"mindvault/api/routers/*" = ["B008"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = false
+ignore_missing_imports = true
+check_untyped_defs = true
+# Type-check the core logic modules where static analysis is most valuable.
+# Run with: mypy mindvault/domain mindvault/parsers mindvault/embeddings \
+#           mindvault/vectorstore mindvault/llm mindvault/security mindvault/jobs
+#           --follow-imports=skip
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+asyncio_mode = "auto"

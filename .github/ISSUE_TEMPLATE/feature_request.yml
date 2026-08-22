@@ -1,0 +1,30 @@
+name: Feature request
+description: Suggest an improvement for MindVault
+title: "[Feature] "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would you like to do?
+      description: Describe the feature and the problem it solves.
+    validations:
+      required: true
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - Document parsing / indexing
+        - Search / retrieval
+        - RAG / chat
+        - Knowledge bases
+        - Study features
+        - UI / UX
+        - Packaging / install
+        - Privacy / security
+        - Other
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional notes

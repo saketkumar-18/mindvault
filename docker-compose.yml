@@ -1,0 +1,46 @@
+# MindVault with a local Ollama sidecar.
+#
+# Usage:
+#   docker compose up --build -d
+#   open http://localhost:8000
+#
+# To use a GPU (NVIDIA), uncomment the deploy block on the ollama service.
+# The MindVault service runs fully local; no cloud APIs are used.
+services:
+  mindvault:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      MV_HOME: /data
+      MV_HOST: 0.0.0.0
+      MV_PORT: 8000
+      # Connect to the Ollama sidecar over the compose network.
+      MV_OLLAMA_URL: http://ollama:11434
+      MV_EMBEDDING_PROVIDER: hash
+    volumes:
+      - mv-data:/data
+    depends_on:
+      - ollama
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    restart: unless-stopped
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+volumes:
+  mv-data:
+  ollama-models:

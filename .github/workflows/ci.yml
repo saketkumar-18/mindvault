@@ -1,0 +1,110 @@
+# MindVault — build & test pipeline.
+# Runs on push/PR. No proprietary secrets or external services required.
+
+name: ci
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (lint + typecheck + tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install dependencies (locked)
+        run: uv sync --extra dev --locked
+
+      - name: Lint (ruff)
+        run: uv run ruff check mindvault tests
+
+      - name: Type check (mypy, core modules)
+        run: |
+          uv run mypy mindvault/domain mindvault/parsers mindvault/embeddings \
+            mindvault/vectorstore mindvault/llm mindvault/security mindvault/jobs \
+            --follow-imports=skip
+
+      - name: Unit + integration tests (no ML/GPU required)
+        env:
+          MV_EMBEDDING_PROVIDER: hash
+          MV_LLM_PROVIDER: mock
+        run: uv run pytest tests
+
+      - name: RAG evaluation (regression check)
+        env:
+          MV_EMBEDDING_PROVIDER: hash
+          MV_LLM_PROVIDER: mock
+        run: uv run pytest tests/eval
+
+  frontend:
+    name: Frontend (typecheck + tests + build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Unit tests
+        run: npm run test
+
+      - name: Production build
+        run: npm run build
+
+  docker:
+    name: Docker build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t mindvault:ci .
+
+  dependency-security:
+    name: Dependency security scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: pip-audit
+        run: |
+          pip install pip-audit
+          pip-audit -r backend/uv.lock --require-hashes
+      - name: npm audit
+        working-directory: frontend
+        continue-on-error: true
+        run: npm audit --omit=dev

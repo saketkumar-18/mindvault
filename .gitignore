@@ -1,0 +1,55 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.sqlite3
+*.db
+
+# --- Node ---
+node_modules/
+dist/
+dist-ssr/
+.vite/
+*.local
+
+# --- MindVault runtime data (never commit) ---
+mindvault.db
+documents/
+index/
+.data/
+data/
+*.npz
+*.ids.json
+
+# --- Environment / secrets ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# --- Editors / OS ---
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# --- Playwright ---
+test-results/
+playwright-report/
+
+# --- Packaging ---
+*.exe
+*.msi
+*.whl
+build/
+dist-exe/

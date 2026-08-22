@@ -1,0 +1,98 @@
+from __future__ import annotations
+
+import json
+from collections.abc import Iterator
+from typing import Any
+
+import httpx
+
+from mindvault.llm.base import InterruptedGeneration, LLMRequest
+
+
+class LlamaCppProvider:
+    """llama.cpp server via the OpenAI-compatible ``/v1/chat/completions`` endpoint.
+
+    Assumes ``llama-server`` is running locally (e.g. ``llama-server -m model.gguf --host 127.0.0.1``).
+    GGUF models are loaded directly by the server; no model weights are bundled
+    in MindVault.
+    """
+
+    name = "llama.cpp"
+
+    def __init__(self, server_url: str = "http://127.0.0.1:8080", model: str | None = None) -> None:
+        self.server_url = server_url.rstrip("/")
+        self._model = model
+        self._http = httpx.Client(timeout=httpx.Timeout(connect=3.0, read=300.0, write=60.0, pool=5.0))
+
+    @property
+    def model(self) -> str:
+        return self._model or ""
+
+    # -- interface --------------------------------------------------------
+    def available(self) -> bool:
+        try:
+            r = self._http.get(f"{self.server_url}/v1/models", timeout=3.0)
+            return r.status_code == 200
+        except httpx.HTTPError:
+            return False
+
+    def list_models(self) -> list[dict[str, object]]:
+        try:
+            r = self._http.get(f"{self.server_url}/v1/models", timeout=5.0)
+            r.raise_for_status()
+            data = r.json()
+            models = data.get("data", data)
+            return [
+                {
+                    "name": m.get("id", m.get("model", "unknown")),
+                    "provider": "llama.cpp",
+                    "status": "available",
+                }
+                for m in (models if isinstance(models, list) else [])
+            ]
+        except httpx.HTTPError:
+            return []
+
+    def generate(self, request: LLMRequest) -> Iterator[str]:
+        if not self.available():
+            raise InterruptedGeneration("llama.cpp server is not reachable.")
+
+        messages: list[dict[str, str]] = [
+            {"role": msg["role"], "content": msg["content"]} for msg in request.messages
+        ]
+        if request.system:
+            messages.insert(0, {"role": "system", "content": request.system})
+
+        payload: dict[str, Any] = {
+            "messages": messages,
+            "stream": True,
+            "temperature": request.temperature,
+            "max_tokens": request.max_tokens,
+        }
+        if request.stop:
+            payload["stop"] = request.stop
+
+        try:
+            with self._http.stream(
+                "POST", f"{self.server_url}/v1/chat/completions", json=payload, timeout=300.0
+            ) as resp:
+                resp.raise_for_status()
+                for line in resp.iter_lines():
+                    line = line.strip()
+                    if not line:
+                        continue
+                    if not line.startswith("data: "):
+                        continue
+                    data_str = line[6:]
+                    if data_str == "[DONE]":
+                        break
+                    try:
+                        data = json.loads(data_str)
+                    except json.JSONDecodeError:
+                        continue
+                    delta = data.get("choices", [{}])[0].get("delta", {})
+                    token = delta.get("content", "")
+                    if token:
+                        yield token
+        except httpx.HTTPError as exc:
+            raise InterruptedGeneration("llama.cpp server returned an error.") from exc
