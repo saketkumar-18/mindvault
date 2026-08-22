@@ -10,6 +10,24 @@ Common issues and fixes for MindVault.
 - In MindVault **Settings → AI**, select the model and click **Test Model**.
 - If using llama.cpp, confirm `llama-server` is running and reachable.
 
+## The model returns gibberish like "@@@@@@..."
+
+This typically means your local LLM runtime is trying to use an **unsupported
+GPU**. On Windows, Ollama does not support AMD GPUs (ROCm is Linux-only), and
+on some machines it will attempt to use the AMD adapter and produce repeated
+garbage tokens.
+
+Fix: force CPU inference for Ollama.
+
+```powershell
+# Set for your user (persists), then restart Ollama:
+setx OLLAMA_LLM_LIBRARY cpu
+# Fully quit Ollama (tray icon → Quit), then start it again.
+```
+
+Verify: `ollama run llama3.2:1b "say hello"` should return a normal sentence.
+Then re-test the model in MindVault **Settings → AI → Test Model**.
+
 ## Search returns nothing or poor results
 
 - Documents must show status **indexed** in the Documents page.

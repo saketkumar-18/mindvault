@@ -1,15 +1,29 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Request
+from pydantic import BaseModel
 
 from mindvault.api.deps import get_container
 
 router = APIRouter(prefix="/api/knowledge-bases")
 
 
+class KBCreateRequest(BaseModel):
+    name: str
+    description: str | None = None
+
+
+class KBUpdateRequest(BaseModel):
+    name: str | None = None
+
+
+class KBAddDocumentsRequest(BaseModel):
+    document_ids: list[str]
+
+
 @router.post("")
-def create_kb(request: Request, name: str, description: str | None = None) -> dict[str, object]:
-    kb = get_container(request).knowledge_base_service.create(name, description)
+def create_kb(request: Request, payload: KBCreateRequest) -> dict[str, object]:
+    kb = get_container(request).knowledge_base_service.create(payload.name, payload.description)
     return {"id": kb.id, "name": kb.name}
 
 
@@ -37,10 +51,10 @@ def get_kb(request: Request, kb_id: str) -> dict[str, object]:
 
 
 @router.patch("/{kb_id}")
-def update_kb(request: Request, kb_id: str, name: str | None = None) -> dict[str, object]:
-    if name:
-        get_container(request).knowledge_base_service.rename(kb_id, name)
-    return {"id": kb_id, "name": name}
+def update_kb(request: Request, kb_id: str, payload: KBUpdateRequest) -> dict[str, object]:
+    if payload.name:
+        get_container(request).knowledge_base_service.rename(kb_id, payload.name)
+    return {"id": kb_id, "name": payload.name}
 
 
 @router.delete("/{kb_id}")
@@ -50,8 +64,8 @@ def delete_kb(request: Request, kb_id: str) -> dict[str, str]:
 
 
 @router.post("/{kb_id}/documents")
-def add_documents(request: Request, kb_id: str, document_ids: list[str]) -> dict[str, str]:
-    get_container(request).knowledge_base_service.add_documents(kb_id, document_ids)
+def add_documents(request: Request, kb_id: str, payload: KBAddDocumentsRequest) -> dict[str, str]:
+    get_container(request).knowledge_base_service.add_documents(kb_id, payload.document_ids)
     return {"status": "ok"}
 
 

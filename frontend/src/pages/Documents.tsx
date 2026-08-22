@@ -200,7 +200,7 @@ export default function Documents() {
       </Modal>
 
       {viewId && (
-        <DocumentViewer documentId={viewId.id} filename={viewId.filename} onClose={() => setViewId(null)} />
+        <DocumentViewer documentId={viewId.id} filename={viewId.filename} extension={viewId.extension} onClose={() => setViewId(null)} />
       )}
     </div>
   );

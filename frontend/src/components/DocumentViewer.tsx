@@ -6,7 +6,61 @@ import type { ChunkInfo } from "../lib/types";
 
 const PAGE_SIZE = 20;
 
-export function DocumentViewer({ documentId, filename, onClose }: { documentId: string; filename: string; onClose: () => void }) {
+export function DocumentViewer({ documentId, filename, extension, onClose }: { documentId: string; filename: string; extension?: string | null; onClose: () => void }) {
+  const isPdf = (extension ?? filename.split(".").pop() ?? "").toLowerCase() === "pdf";
+  const [tab, setTab] = useState<"native" | "chunks">(isPdf ? "native" : "chunks");
+
+  return (
+    <Modal open onClose={onClose} title={filename}>
+      {isPdf && (
+        <div className="mb-3 flex gap-2" role="tablist" aria-label="Document view">
+          <button
+            role="tab"
+            aria-selected={tab === "native"}
+            className={`btn ${tab === "native" ? "btn-primary" : "btn-ghost"} text-xs`}
+            onClick={() => setTab("native")}
+            type="button"
+          >
+            Rendered PDF
+          </button>
+          <button
+            role="tab"
+            aria-selected={tab === "chunks"}
+            className={`btn ${tab === "chunks" ? "btn-primary" : "btn-ghost"} text-xs`}
+            onClick={() => setTab("chunks")}
+            type="button"
+          >
+            Indexed text
+          </button>
+        </div>
+      )}
+      {tab === "native" ? <PdfEmbed key={documentId} documentId={documentId} /> : <ChunkBrowser documentId={documentId} />}
+    </Modal>
+  );
+}
+
+function PdfEmbed({ documentId }: { documentId: string }) {
+  const [error, setError] = useState<string | null>(null);
+  return (
+    <div>
+      <p className="mb-2 text-xs text-[var(--color-mv-muted)]">
+        Use the browser's PDF controls for page navigation and search. Or switch to <strong>Indexed text</strong>.
+      </p>
+      {error ? (
+        <p className="rounded-lg bg-[var(--color-mv-danger-soft)] px-3 py-2 text-sm text-[var(--color-mv-danger)]">{error}</p>
+      ) : (
+        <iframe
+          title="PDF preview"
+          src={`/api/documents/${documentId}/view`}
+          className="h-[65vh] w-full rounded-lg border border-[var(--color-mv-border)] bg-white"
+          onError={() => setError("Could not render this PDF in the browser.")}
+        />
+      )}
+    </div>
+  );
+}
+
+function ChunkBrowser({ documentId }: { documentId: string }) {
   const [chunks, setChunks] = useState<ChunkInfo[]>([]);
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
@@ -30,7 +84,7 @@ export function DocumentViewer({ documentId, filename, onClose }: { documentId: 
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
-    <Modal open onClose={onClose} title={filename}>
+    <div>
       <div className="flex items-center justify-between text-xs text-[var(--color-mv-muted)]">
         <span>
           {total} {t("documents.chunks", { count: String(total) })}
@@ -69,6 +123,6 @@ export function DocumentViewer({ documentId, filename, onClose }: { documentId: 
           Next →
         </button>
       </div>
-    </Modal>
+    </div>
   );
 }

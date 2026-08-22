@@ -36,8 +36,9 @@ Responses are JSON like `{"status":"ok","database":true,"vector_store":3,"model"
 | POST | `/api/documents` | Upload (multipart `file`; optional `knowledge_base_id`, `replace`, `duplicate`) |
 | GET | `/api/documents` | List (filters: `knowledge_base_id`, `status`, `file_type`, `q`, `limit`, `offset`) |
 | GET | `/api/documents/{id}` | Details |
-| GET | `/api/documents/{id}/download` | Download original file |
-| PATCH | `/api/documents/{id}` | Rename (`{"filename": "..."}`) |
+| GET | `/api/documents/{id}/download` | Download original file (attachment) |
+| GET | `/api/documents/{id}/view` | View original file inline (e.g. browser-rendered PDF) |
+| PATCH | `/api/documents/{id}` | Rename and/or set knowledge base (`{"filename": "...", "knowledge_base_id": "..."}`; `knowledge_base_id: null` unassigns) |
 | DELETE | `/api/documents/{id}` | Delete + cleanup vectors/chunks/file |
 | POST | `/api/documents/{id}/reindex` | Re-run indexing |
 | GET | `/api/documents/{id}/chunks` | List chunks (paged) |

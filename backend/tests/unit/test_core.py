@@ -2,6 +2,7 @@
 
 
 import pytest
+from mindvault.config import Settings
 from mindvault.domain.chunker import ChunkSpec, TextChunker, chunk_document
 from mindvault.embeddings.hash_embedding import HashEmbeddingProvider
 from mindvault.errors import SecurityViolation, ValidationFailed
@@ -112,6 +113,41 @@ class TestEmbeddings:
         assert len(vectors) == 2
         assert len(vectors[0]) == 384
         assert all(isinstance(v, float) for v in vectors[0])
+
+    def test_factory_auto_fallback_without_sentence_transformers(self, monkeypatch):
+        """auto must fall back to hash when sentence-transformers is missing."""
+        import builtins
+
+        real_import = builtins.__import__
+
+        def fake_import(name, *args, **kwargs):
+            if name == "sentence_transformers":
+                raise ImportError("No module named 'sentence_transformers'")
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "__import__", fake_import)
+        from mindvault.embeddings.factory import create_embedding_provider
+
+        provider = create_embedding_provider(Settings())
+        assert provider.name == "hash"
+
+    def test_factory_explicit_sentence_transformers_raises_without_dep(self, monkeypatch):
+        """Explicit sentence-transformers choice must raise if the dep is missing."""
+        import builtins
+
+        real_import = builtins.__import__
+
+        def fake_import(name, *args, **kwargs):
+            if name == "sentence_transformers":
+                raise ImportError("No module named 'sentence_transformers'")
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "__import__", fake_import)
+        from mindvault.embeddings.factory import create_embedding_provider
+
+        settings = Settings(embedding_provider="sentence-transformers")
+        with pytest.raises(ImportError):
+            create_embedding_provider(settings)
 
 
 # -- Vector store tests ------------------------------------------------------

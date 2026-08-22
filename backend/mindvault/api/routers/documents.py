@@ -1,12 +1,18 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, File, Form, Request, UploadFile
+from pydantic import BaseModel
 
 from mindvault.api.deps import get_container
 from mindvault.db.models import Document
 from mindvault.errors import NotFoundError, ValidationFailed
 
 router = APIRouter(prefix="/api/documents")
+
+
+class DocumentUpdateRequest(BaseModel):
+    filename: str | None = None
+    knowledge_base_id: str | None = None
 
 
 @router.post("")
@@ -104,6 +110,16 @@ def get_document(request: Request, document_id: str) -> dict[str, object]:
         }
 
 
+_MIME_BY_EXT = {
+    "pdf": "application/pdf",
+    "txt": "text/plain",
+    "md": "text/markdown",
+    "csv": "text/csv",
+    "json": "application/json",
+    "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+}
+
+
 @router.get("/{document_id}/download")
 def download_document(request: Request, document_id: str):
     from starlette.responses import Response
@@ -116,11 +132,39 @@ def download_document(request: Request, document_id: str):
     )
 
 
+@router.get("/{document_id}/view")
+def view_document(request: Request, document_id: str):
+    """Serve the original file inline so the browser can render it (e.g. PDFs)."""
+    from starlette.responses import Response
+
+    data, filename = get_container(request).export_service.download_document(document_id)
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    media_type = _MIME_BY_EXT.get(ext, "application/octet-stream")
+    return Response(
+        content=data,
+        media_type=media_type,
+        headers={"Content-Disposition": f'inline; filename="{filename}"'},
+    )
+
+
 @router.patch("/{document_id}")
-def update_document(request: Request, document_id: str, filename: str | None = None):
+def update_document(request: Request, document_id: str, payload: DocumentUpdateRequest):
     container = get_container(request)
-    if filename:
-        container.document_service.rename(document_id, filename)
+    if payload.filename:
+        container.document_service.rename(document_id, payload.filename)
+    if "knowledge_base_id" in payload.model_fields_set:
+        kb_id = payload.knowledge_base_id
+        if kb_id:
+            container.knowledge_base_service.add_documents(kb_id, [document_id])
+        else:
+            # Explicit null / empty means "remove from its current KB".
+            with container.session_factory.begin() as session:
+                doc = session.get(Document, document_id)
+                if doc is None:
+                    raise NotFoundError(f"Document '{document_id}' not found.")
+                current_kb = doc.knowledge_base_id
+            if current_kb:
+                container.knowledge_base_service.remove_document(current_kb, document_id)
     return {"status": "ok"}
 
 

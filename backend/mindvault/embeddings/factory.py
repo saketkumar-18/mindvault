@@ -23,6 +23,9 @@ def create_embedding_provider(settings: Settings) -> EmbeddingProvider:
 
     if configured in ("auto", "sentence-transformers", "st"):
         try:
+            # Probe the real dependency now, not lazily at first embed time.
+            import sentence_transformers  # noqa: F401
+
             from mindvault.embeddings.sentence_transformer import SentenceTransformerProvider
 
             provider = SentenceTransformerProvider(settings.embedding_model, dim=settings.embedding_dim)

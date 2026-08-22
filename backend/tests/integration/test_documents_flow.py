@@ -64,3 +64,29 @@ def test_upload_duplicate(client: TestClient):
     resp = client.post("/api/documents", files={"file": ("a.txt", content, "text/plain")})
     assert resp.status_code == 409
     assert "duplicate" in resp.text.lower() or "already exists" in resp.text.lower()
+
+
+def test_document_view_inline(client: TestClient):
+    content = b"Inline view test content."
+    resp = client.post("/api/documents", files={"file": ("view.txt", content, "text/plain")})
+    doc_id = resp.json()["id"]
+    import time
+
+    for _ in range(30):
+        if client.get(f"/api/documents/{doc_id}").json()["status"] == "indexed":
+            break
+        time.sleep(0.2)
+
+    # /view serves the original file inline with the right media type
+    resp = client.get(f"/api/documents/{doc_id}/view")
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("text/plain")
+    assert "inline" in resp.headers.get("content-disposition", "")
+    assert resp.content == content
+
+    # /download forces attachment
+    resp = client.get(f"/api/documents/{doc_id}/download")
+    assert resp.status_code == 200
+    assert "attachment" in resp.headers.get("content-disposition", "")
+
+    client.delete(f"/api/documents/{doc_id}")

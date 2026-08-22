@@ -39,8 +39,14 @@ class ChatService:
             return rows
 
     def get_conversation(self, conversation_id: str) -> Conversation:
+        from sqlalchemy.orm import selectinload
+
         with self.session_factory() as session:
-            conv = session.get(Conversation, conversation_id)
+            conv = session.execute(
+                select(Conversation)
+                .options(selectinload(Conversation.messages))
+                .where(Conversation.id == conversation_id)
+            ).scalar_one_or_none()
             if conv is None:
                 raise NotFoundError(f"Conversation '{conversation_id}' not found.")
             return conv

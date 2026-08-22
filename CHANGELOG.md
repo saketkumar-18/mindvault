@@ -57,6 +57,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **Security** — path traversal protection, file validation, prompt injection defense,
   SQLAlchemy parameterized queries, React escaping.
 
+### Added after first commit
+
+- **PDF viewer** — native browser PDF rendering via inline-serving endpoint;
+  tabbed view (rendered PDF / indexed text chunks).
+- **Screenshots** — 8 real screenshots captured via Playwright, shown in README.
+- **Desktop packaging** — PyInstaller bundle verified (builds, runs, serves the
+  frontend); Tauri scaffold committed for future native packaging.
+- **API contract fixes** — KB create/rename/document-add now use JSON bodies
+  matching the frontend; document PATCH handles rename and KB assignment.
+- **Bug fixes** — clear-all-data commit semantics; first-run API; settings key.
+
 ### Architectural
 
 - Clean separation into `parsers/`, `embeddings/`, `vectorstore/`, `llm/`, `rag/`,

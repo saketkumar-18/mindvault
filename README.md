@@ -4,7 +4,7 @@
 
 MindVault is a **local-first** AI knowledge assistant. You upload your documents, organize them into knowledge bases, search them semantically, and ask questions — all processed on your own machine by local AI models. **No OpenAI, no Gemini, no cloud, no account, no telemetry.**
 
-*Screenshots will be added to `docs/screenshots/` — see the note there.*
+![MindVault dashboard](docs/screenshots/dashboard.png)
 
 ---
 
@@ -41,9 +41,17 @@ MindVault is a **local-first** AI knowledge assistant. You upload your documents
 
 ## Screenshots
 
-| Chat with sources | Documents | Study |
+| First run | Dashboard | Chat with sources |
 |---|---|---|
-| *(see docs/screenshots/README.md)* | | |
+| ![Welcome](docs/screenshots/welcome.png) | ![Dashboard](docs/screenshots/dashboard.png) | ![Chat](docs/screenshots/chat.png) |
+
+| Documents | Knowledge Bases | Search |
+|---|---|---|
+| ![Documents](docs/screenshots/documents.png) | ![Knowledge Bases](docs/screenshots/knowledge-bases.png) | ![Search](docs/screenshots/search.png) |
+
+| Study | Settings |
+|---|---|
+| ![Study](docs/screenshots/study.png) | ![Settings](docs/screenshots/settings.png) |
 
 ---
 

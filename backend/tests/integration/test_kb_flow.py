@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 
 def test_kb_crud(client: TestClient):
     # Create
-    resp = client.post("/api/knowledge-bases", params={"name": "Test KB", "description": "For testing"})
+    resp = client.post("/api/knowledge-bases", json={"name": "Test KB", "description": "For testing"})
     assert resp.status_code == 200, resp.text
     kb_id = resp.json()["id"]
 
@@ -16,7 +16,8 @@ def test_kb_crud(client: TestClient):
     assert kb_id in ids
 
     # Rename
-    resp = client.patch(f"/api/knowledge-bases/{kb_id}", params={"name": "Renamed KB"})
+    resp = client.patch(f"/api/knowledge-bases/{kb_id}", json={"name": "Renamed KB"})
+    assert resp.status_code == 200
     resp = client.get(f"/api/knowledge-bases/{kb_id}")
     assert resp.json()["name"] == "Renamed KB"
 
@@ -29,7 +30,7 @@ def test_kb_crud(client: TestClient):
 
 def test_kb_document_assignment(client: TestClient):
     # Create KB
-    resp = client.post("/api/knowledge-bases", params={"name": "Assignment KB"})
+    resp = client.post("/api/knowledge-bases", json={"name": "Assignment KB"})
     kb_id = resp.json()["id"]
 
     # Upload document

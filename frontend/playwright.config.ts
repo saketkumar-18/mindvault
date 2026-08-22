@@ -2,6 +2,9 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./e2e",
+  // Screenshot capture is manual-only (run with CAPTURE_SCREENSHOTS=1);
+  // it needs a fresh DB (wizard visible) and is excluded from CI runs.
+  testIgnore: process.env.CAPTURE_SCREENSHOTS === "1" ? [] : ["**/screenshots.spec.ts"],
   timeout: 60_000,
   retries: 0,
   use: {
