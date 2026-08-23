@@ -38,7 +38,7 @@ ml = [
     "faiss-cpu>=1.10",
 ]
 llamacpp = [
-    "llama-cpp-python>=0.2.80",
+    "llama-cpp-python>=0.3.35",
 ]
 
 [project.scripts]
