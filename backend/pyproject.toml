@@ -35,7 +35,7 @@ packaging = [
 # automatically upgrades to real semantic embeddings / FAISS.
 ml = [
     "sentence-transformers>=3.0",
-    "faiss-cpu>=1.10",
+    "faiss-cpu>=1.15.0",
 ]
 llamacpp = [
     "llama-cpp-python>=0.2.80",
