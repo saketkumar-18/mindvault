@@ -2,7 +2,7 @@
 name = "mindvault"
 version = "0.3.0"
 description = "MindVault backend: local-first private AI knowledge assistant"
-readme = "../README.md"
+readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "AGPL-3.0-only" }
 authors = [{ name = "MindVault Contributors" }]

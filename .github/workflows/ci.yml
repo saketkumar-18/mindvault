@@ -103,7 +103,9 @@ jobs:
       - name: pip-audit
         run: |
           pip install pip-audit
-          pip-audit -r backend/uv.lock --require-hashes
+          uv export --project backend --format requirements-txt --no-hashes -o /tmp/requirements.txt
+          grep -v '^-e \.' /tmp/requirements.txt > /tmp/requirements-audit.txt
+          pip-audit -r /tmp/requirements-audit.txt
       - name: npm audit
         working-directory: frontend
         continue-on-error: true
