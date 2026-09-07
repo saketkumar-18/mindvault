@@ -1,3 +1,5 @@
+**Live demo:** https://mindvault-l60k.onrender.com — full app (UI + API) with a cloud LLM backend; data is ephemeral on the free tier.
+
 # MindVault
 
 > **Private AI Knowledge Assistant — Your knowledge, your machine, your privacy.**
