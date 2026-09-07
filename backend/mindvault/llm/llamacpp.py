@@ -21,7 +21,13 @@ class LlamaCppProvider:
 
     def __init__(self, server_url: str = "http://127.0.0.1:8080", model: str | None = None,
                  api_key: str | None = None) -> None:
-        self.server_url = server_url.rstrip("/")
+        # Accept both a bare host (llama-server) and an OpenAI-compatible base
+        # URL ending in /v1 (vLLM, OpenRouter, ...) — the provider itself
+        # appends /v1/models and /v1/chat/completions.
+        server_url = server_url.rstrip("/")
+        if server_url.endswith("/v1"):
+            server_url = server_url[: -len("/v1")]
+        self.server_url = server_url
         self._model = model
         self._api_key = (api_key or "").strip() or None
         self._http = httpx.Client(timeout=httpx.Timeout(connect=10.0, read=300.0, write=60.0, pool=5.0))
