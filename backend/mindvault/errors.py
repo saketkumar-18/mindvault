@@ -109,7 +109,19 @@ def install_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(RequestValidationError)
     async def validation_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
-        details = exc.errors()
+        # exc.errors() can carry non-JSON-serializable ctx (e.g. bytes from a
+        # malformed multipart body) — sanitize before rendering, or the error
+        # handler itself 500s and masks the real 422.
+        def _clean(obj: object) -> object:
+            if isinstance(obj, bytes):
+                return obj.decode("utf-8", "replace")[:200]
+            if isinstance(obj, dict):
+                return {k: _clean(v) for k, v in obj.items()}
+            if isinstance(obj, (list, tuple)):
+                return [_clean(v) for v in obj]
+            return obj
+
+        details = _clean(exc.errors())
         payload = {
             "error": {
                 "code": "validation_error",

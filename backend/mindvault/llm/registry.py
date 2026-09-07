@@ -27,7 +27,9 @@ def resolve_llm(settings: Settings, settings_svc: SettingsService | None = None)
     """
     configured = settings.llm_provider.strip().lower()
     effective = settings_svc.get_effective() if settings_svc else None
-    model = (effective or {}).get("ai", {}).get("model", settings.llm_model) or ""
+    # DB-stored model wins only when non-empty; otherwise fall back to the
+    # env/default (MV_LLM_MODEL), and only then to "".
+    model = ((effective or {}).get("ai", {}).get("model") or "").strip() or (settings.llm_model or "").strip()
 
     if configured == "mock":
         return LLMResolution(provider=MockLLMProvider(), status="mock", model=model)
