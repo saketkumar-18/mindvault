@@ -24,7 +24,7 @@ class LlamaCppProvider:
         self.server_url = server_url.rstrip("/")
         self._model = model
         self._api_key = (api_key or "").strip() or None
-        self._http = httpx.Client(timeout=httpx.Timeout(connect=3.0, read=300.0, write=60.0, pool=5.0))
+        self._http = httpx.Client(timeout=httpx.Timeout(connect=10.0, read=300.0, write=60.0, pool=5.0))
 
     @property
     def model(self) -> str:
@@ -36,7 +36,7 @@ class LlamaCppProvider:
 
     def available(self) -> bool:
         try:
-            r = self._http.get(f"{self.server_url}/v1/models", timeout=3.0,
+            r = self._http.get(f"{self.server_url}/v1/models", timeout=10.0,
                                headers=self._auth_headers())
             return r.status_code == 200
         except httpx.HTTPError:
@@ -44,7 +44,7 @@ class LlamaCppProvider:
 
     def list_models(self) -> list[dict[str, object]]:
         try:
-            r = self._http.get(f"{self.server_url}/v1/models", timeout=5.0,
+            r = self._http.get(f"{self.server_url}/v1/models", timeout=15.0,
                                headers=self._auth_headers())
             r.raise_for_status()
             data = r.json()
