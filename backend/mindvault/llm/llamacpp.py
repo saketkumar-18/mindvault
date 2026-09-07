@@ -108,7 +108,11 @@ class LlamaCppProvider:
                         data = json.loads(data_str)
                     except json.JSONDecodeError:
                         continue
-                    delta = data.get("choices", [{}])[0].get("delta", {})
+                    # some providers emit keep-alive/error frames with empty choices
+                    choices = data.get("choices") or []
+                    if not choices:
+                        continue
+                    delta = choices[0].get("delta", {})
                     token = delta.get("content", "")
                     if token:
                         yield token
