@@ -53,11 +53,24 @@ def resolve_llm(settings: Settings, settings_svc: SettingsService | None = None)
             logger.warning("Ollama check failed: %s", exc)
 
     if configured in ("auto", "llama_cpp"):
+        # Remote OpenAI-compatible endpoint (cloud/demo): explicit URL wins,
+        # no local model file required.
+        if settings.llama_server_url:
+            from mindvault.llm.llamacpp import LlamaCppProvider
+
+            provider = LlamaCppProvider(
+                server_url=settings.llama_server_url,
+                model=model or None,
+                api_key=settings.llama_api_key,
+            )
+            if provider.available():
+                return LLMResolution(provider=provider, status="llama.cpp", model=model)
         if settings.llama_model_path:
             from mindvault.llm.llamacpp import LlamaCppProvider
 
-            server_url = settings.ollama_url.replace(":11434", ":8080")
-            provider = LlamaCppProvider(server_url=server_url, model=model or None)
+            server_url = settings.llama_server_url or settings.ollama_url.replace(":11434", ":8080")
+            provider = LlamaCppProvider(server_url=server_url, model=model or None,
+                                        api_key=settings.llama_api_key)
             if provider.available():
                 return LLMResolution(provider=provider, status="llama.cpp", model=model)
 

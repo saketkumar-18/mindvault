@@ -41,6 +41,12 @@ class Settings(BaseSettings):
     llm_max_tokens: int = 1024
     llama_model_path: str | None = None
     llama_ctx_size: int = 4096
+    # OpenAI-compatible remote endpoint for the llama.cpp provider (cloud demo).
+    # When set, it overrides the derived localhost:8080 server URL, and the key
+    # is sent as a Bearer header. Works with llama-server, vLLM, OpenRouter,
+    # Tokenrouter and any /v1/chat/completions endpoint.
+    llama_server_url: str | None = None
+    llama_api_key: str | None = None
 
     embedding_provider: str = "auto"  # auto | sentence-transformers | hash
     embedding_model: str = "all-MiniLM-L6-v2"

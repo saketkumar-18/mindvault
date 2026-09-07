@@ -19,9 +19,11 @@ class LlamaCppProvider:
 
     name = "llama.cpp"
 
-    def __init__(self, server_url: str = "http://127.0.0.1:8080", model: str | None = None) -> None:
+    def __init__(self, server_url: str = "http://127.0.0.1:8080", model: str | None = None,
+                 api_key: str | None = None) -> None:
         self.server_url = server_url.rstrip("/")
         self._model = model
+        self._api_key = (api_key or "").strip() or None
         self._http = httpx.Client(timeout=httpx.Timeout(connect=3.0, read=300.0, write=60.0, pool=5.0))
 
     @property
@@ -29,16 +31,21 @@ class LlamaCppProvider:
         return self._model or ""
 
     # -- interface --------------------------------------------------------
+    def _auth_headers(self) -> dict[str, str]:
+        return {"Authorization": f"Bearer {self._api_key}"} if self._api_key else {}
+
     def available(self) -> bool:
         try:
-            r = self._http.get(f"{self.server_url}/v1/models", timeout=3.0)
+            r = self._http.get(f"{self.server_url}/v1/models", timeout=3.0,
+                               headers=self._auth_headers())
             return r.status_code == 200
         except httpx.HTTPError:
             return False
 
     def list_models(self) -> list[dict[str, object]]:
         try:
-            r = self._http.get(f"{self.server_url}/v1/models", timeout=5.0)
+            r = self._http.get(f"{self.server_url}/v1/models", timeout=5.0,
+                               headers=self._auth_headers())
             r.raise_for_status()
             data = r.json()
             models = data.get("data", data)
@@ -69,12 +76,17 @@ class LlamaCppProvider:
             "temperature": request.temperature,
             "max_tokens": request.max_tokens,
         }
+        if self._model:
+            payload["model"] = self._model
         if request.stop:
             payload["stop"] = request.stop
 
+        headers = {"Authorization": f"Bearer {self._api_key}"} if self._api_key else {}
+
         try:
             with self._http.stream(
-                "POST", f"{self.server_url}/v1/chat/completions", json=payload, timeout=300.0
+                "POST", f"{self.server_url}/v1/chat/completions", json=payload,
+                headers=headers, timeout=300.0
             ) as resp:
                 resp.raise_for_status()
                 for line in resp.iter_lines():
